@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tebak Kosakata Sekolah Kejuruan</title>
+
+<style>
+body{
+    font-family: Arial, sans-serif;
+    background: linear-gradient(135deg,#e3f2fd,#f3e5f5);
+    margin:0;
+    padding:20px;
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    flex-direction:column;
+}
+header{
+    position:fixed;
+    top:15px;
+    right:15px;
+    background:#fff;
+    padding:10px 20px;
+    border-radius:20px;
+    box-shadow:0 4px 8px rgba(0,0,0,.2);
+    display:none;
+    font-weight:bold;
+}
+#loginForm,.game-container,#finalScreen{
+    background:#fff;
+    padding:30px;
+    border-radius:20px;
+    box-shadow:0 8px 16px rgba(0,0,0,.2);
+    max-width:600px;
+    width:100%;
+    text-align:center;
+}
+input{
+    width:100%;
+    padding:15px;
+    font-size:18px;
+    border-radius:15px;
+    border:1px solid #ccc;
+    margin-bottom:20px;
+}
+button{
+    padding:15px;
+    font-size:18px;
+    border-radius:15px;
+    border:none;
+    background:#4caf50;
+    color:white;
+    cursor:pointer;
+    transition:.3s;
+}
+button:hover{transform:scale(1.05);}
+.question{
+    font-size:32px;
+    color:#1976d2;
+    margin-bottom:10px;
+}
+#questionImage{
+    max-width:150px;
+    margin:15px auto;
+    display:none;
+    animation:fadeIn .4s;
+}
+.options{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:15px;
+    margin-top:20px;
+}
+.correct{background:#4caf50!important;}
+.wrong{background:#f44336!important;}
+.feedback{
+    font-size:24px;
+    margin-top:15px;
+    display:none;
+}
+.explanation{
+    margin-top:10px;
+    color:#555;
+    display:none;
+}
+#nextBtn{
+    margin-top:20px;
+    background:#2196f3;
+    display:none;
+}
+#logoutBtn{
+    margin-top:15px;
+    background:#f44336;
+    display:none;
+}
+@keyframes fadeIn{
+    from{opacity:0;transform:translateY(10px);}
+    to{opacity:1;transform:translateY(0);}
+}
+</style>
+</head>
+
+<body>
+
+<header id="score">Skor: 0</header>
+
+<div id="loginForm">
+    <h2>Login Nickname</h2>
+    <input type="text" id="nicknameInput" placeholder="Masukkan nickname">
+    <button onclick="login()">Mulai Game</button>
+</div>
+
+<div class="game-container" id="gameContainer" style="display:none;">
+    <div class="question" id="question"></div>
+    <img id="questionImage">
+    <div class="options" id="options"></div>
+    <div class="feedback" id="feedback"></div>
+    <div class="explanation" id="explanation"></div>
+    <button id="nextBtn" onclick="nextQuestion()">Soal Berikutnya</button>
+    <button id="logoutBtn" onclick="logout()">Logout</button>
+</div>
+
+<div id="finalScreen" style="display:none;">
+    <h2>🎉 Semua Soal Selesai</h2>
+    <p id="finalScore"></p>
+    <button onclick="restartGame()">Main Lagi</button>
+</div>
+
+<script>
+const vocabulary=[
+{word:"せんせい",correct:"guru",wrongs:["murid","ruang kelas","buku"],explanation:"せんせい berarti guru.",image:"https://img.icons8.com/color/96/teacher.png"},
+{word:"がくせい",correct:"murid",wrongs:["guru","ruang kelas","buku"],explanation:"がくせい berarti murid.",image:"https://img.icons8.com/color/96/student-male.png"},
+{word:"きょうしつ",correct:"ruang kelas",wrongs:["guru","murid","buku"],explanation:"きょうしつ berarti ruang kelas.",image:"https://img.icons8.com/color/96/classroom.png"},
+{word:"ほん",correct:"buku",wrongs:["guru","murid","ruang kelas"],explanation:"ほん berarti buku.",image:"https://img.icons8.com/color/96/book.png"},
+{word:"じかん",correct:"waktu",wrongs:["belajar","PR","teman"],explanation:"じかん berarti waktu.",image:"https://img.icons8.com/color/96/time.png"},
+{word:"べんきょう",correct:"belajar",wrongs:["waktu","PR","teman"],explanation:"べんきょう berarti belajar.",image:"https://img.icons8.com/color/96/learning.png"},
+{word:"しゅくだい",correct:"PR",wrongs:["waktu","belajar","teman"],explanation:"しゅくだい berarti PR.",image:"https://img.icons8.com/color/96/homework.png"},
+{word:"ともだち",correct:"teman",wrongs:["waktu","belajar","PR"],explanation:"ともだち berarti teman.",image:"https://img.icons8.com/color/96/group.png"},
+{word:"かばん",correct:"tas",wrongs:["penghapus","ruang administrasi","kepala sekolah"],explanation:"かばん berarti tas.",image:"https://img.icons8.com/color/96/backpack.png"},
+{word:"けしごむ",correct:"penghapus",wrongs:["tas","ruang administrasi","kepala sekolah"],explanation:"けしごむ berarti penghapus.",image:"https://img.icons8.com/color/96/eraser.png"},
+{word:"じむしつ",correct:"ruang administrasi",wrongs:["tas","penghapus","kepala sekolah"],explanation:"じむしつ berarti ruang administrasi.",image:"https://img.icons8.com/color/96/office.png"},
+{word:"こうちょう",correct:"kepala sekolah",wrongs:["tas","penghapus","ruang administrasi"],explanation:"こうちょう berarti kepala sekolah.",image:"https://img.icons8.com/color/96/manager.png"},
+{word:"じゅぎょう",correct:"pelajaran",wrongs:["akuntansi","perusahaan","pegawai"],explanation:"じゅぎょう berarti pelajaran.",image:"https://img.icons8.com/color/96/lesson.png"},
+{word:"かいけい",correct:"akuntansi",wrongs:["pelajaran","perusahaan","pegawai"],explanation:"かいけい berarti akuntansi.",image:"https://img.icons8.com/color/96/accounting.png"},
+{word:"かいしゃ",correct:"perusahaan",wrongs:["pelajaran","akuntansi","pegawai"],explanation:"かいしゃ berarti perusahaan.",image:"https://img.icons8.com/color/96/company.png"},
+{word:"しゃいん",correct:"pegawai",wrongs:["pelajaran","akuntansi","perusahaan"],explanation:"しゃいん berarti pegawai.",image:"https://img.icons8.com/color/96/businessman.png"},
+{word:"しゅうにゅう",correct:"pendapatan",wrongs:["pengeluaran","keuntungan","kerugian"],explanation:"しゅうにゅう berarti pendapatan.",image:"https://img.icons8.com/color/96/money.png"},
+{word:"ししゅつ",correct:"pengeluaran",wrongs:["pendapatan","keuntungan","kerugian"],explanation:"ししゅつ berarti pengeluaran.",image:"https://img.icons8.com/color/96/expenses.png"},
+{word:"りえき",correct:"keuntungan",wrongs:["pendapatan","pengeluaran","kerugian"],explanation:"りえき berarti keuntungan.",image:"https://img.icons8.com/color/96/profit.png"},
+{word:"そんしつ",correct:"kerugian",wrongs:["pendapatan","pengeluaran","keuntungan"],explanation:"そんしつ berarti kerugian.",image:"https://img.icons8.com/color/96/loss.png"},
+{word:"ざいさん",correct:"aset",wrongs:["utang","biaya","laporan keuangan"],explanation:"ざいさん berarti aset.",image:"https://img.icons8.com/color/96/assets.png"},
+{word:"ふさい",correct:"utang",wrongs:["aset","biaya","laporan keuangan"],explanation:"ふさい berarti utang.",image:"https://img.icons8.com/color/96/debt.png"},
+{word:"けいひ",correct:"biaya",wrongs:["aset","utang","laporan keuangan"],explanation:"けいひ berarti biaya.",image:"https://img.icons8.com/color/96/cost.png"},
+{word:"けっさん",correct:"laporan keuangan",wrongs:["aset","utang","biaya"],explanation:"けっさん berarti laporan keuangan.",image:"https://img.icons8.com/color/96/financial-report.png"}
+];
+
+let score=0,used=[],current={};
+
+function login(){
+    if(!nicknameInput.value.trim()) return alert("Masukkan nickname!");
+    loginForm.style.display="none";
+    gameContainer.style.display="block";
+    scoreEl.style.display="block";
+    logoutBtn.style.display="block";
+    score=0; used=[];
+    scoreEl.textContent="Skor: 0";
+    nextQuestion();
+}
+
+function nextQuestion(){
+    feedback.style.display="none";
+    explanation.style.display="none";
+    nextBtn.style.display="none";
+    questionImage.style.display="none";
+    if(used.length===vocabulary.length) return final();
+    let i;
+    do{i=Math.floor(Math.random()*vocabulary.length);}while(used.includes(i));
+    used.push(i); current=vocabulary[i];
+    question.textContent=current.word;
+    options.innerHTML="";
+    [current.correct,...current.wrongs].sort(()=>Math.random()-0.5)
+    .forEach(o=>{
+        const b=document.createElement("button");
+        b.textContent=o;
+        b.onclick=()=>check(o,b);
+        options.appendChild(b);
+    });
+}
+
+function check(ans,btn){
+    document.querySelectorAll(".options button").forEach(b=>b.disabled=true);
+    if(ans===current.correct){btn.classList.add("correct");feedback.textContent="Benar 🎉";score++;}
+    else{
+        btn.classList.add("wrong");feedback.textContent="Salah 😅";
+        document.querySelectorAll(".options button")
+        .forEach(b=>b.textContent===current.correct&&b.classList.add("correct"));
+    }
+    scoreEl.textContent="Skor: "+score;
+    explanation.textContent=current.explanation;
+    questionImage.src=current.image;
+    questionImage.style.display="block";
+    feedback.style.display="block";
+    explanation.style.display="block";
+    nextBtn.style.display="inline-block";
+}
+
+function final(){
+    gameContainer.style.display="none";
+    finalScreen.style.display="block";
+    finalScore.textContent="Skor akhir: "+score;
+}
+function logout(){location.reload();}
+function restartGame(){location.reload();}
+
+const scoreEl=document.getElementById("score");
+</script>
+
+</body>
+</html>
